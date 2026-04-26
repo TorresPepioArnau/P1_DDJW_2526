@@ -1,24 +1,34 @@
-import {$} from "../library/jquery-4.0.0.slim.module.min.js";
+addEventListener('load', function() {
+    
+    document.getElementById('play').addEventListener('click', function(){
+        let alies = prompt("Introdueix el teu àlies"); 
+        if (alies) {
+            sessionStorage.setItem('alies', alies);
+            sessionStorage.removeItem('load'); 
+            window.location.assign("./html/game.html");
+        }
+    });
 
-    var clicar_play = $('#play');
-	var clicar_opcio = $('#options');
-	var clicar_saves = $('#saves');
-	var clicar_sortir = $('#exit');
-	
-	clicar_play.on('click', function(){
-	   let alies = prompt ("Introdueix el teu àlies");
-		console.log(alies);
+    document.getElementById('options').addEventListener('click', function(){
+        window.location.assign("./html/options.html");
+    });
+
+    document.getElementById('saves').addEventListener('click', function(){
+        let to_load = localStorage.getItem('save');
+        
+        if (!to_load) {
+            alert("No hi ha cap partida a carregar");
+            return;
+        }
+        
+        sessionStorage.setItem('load', to_load);
         window.location.assign("./html/game.html");
     });
-	
-	clicar_opcio.on('click', function(){
-        console.error("Opció no implementada");
-    });
 
-    clicar_saves.on('click', function(){
-        console.error("Opció no implementada");
-    });
-
-    clicar_sortir.on('click', function(){
-        console.warn("No es pot sortir!");
-    });
+    let clicar_sortir = document.getElementById('exit');
+    if (clicar_sortir) {
+        clicar_sortir.addEventListener('click', function(){
+            console.warn("No es pot sortir!");
+        });
+    }
+});
