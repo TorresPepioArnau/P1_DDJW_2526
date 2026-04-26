@@ -80,59 +80,67 @@ var game = {
         }
     },
 
-    select: function(){
-        if (sessionStorage.load){ 
-            let toLoad = JSON.parse(sessionStorage.load);
-            this.items = toLoad.items;
-            this.states = toLoad.states;
-            this.selectedCards = toLoad.selectedCards || [];
-            this.score = toLoad.score;
-            this.groupsLeft = toLoad.groupsLeft;
-            this.groupSize = toLoad.groupSize || 2;
-            this.mode = toLoad.mode || 1;
-            this.currentLevel = toLoad.currentLevel || 1;
-			if (this.mode === 2) {
-				this.penalty = 10 + (this.currentLevel * 5);
-			} else {
-        
-			let savedOptions = localStorage.options ? JSON.parse(localStorage.options) : {};
-			let difficulty = savedOptions.difficulty || 'normal';
-			if (difficulty === 'easy') this.penalty = 10;
-			else if (difficulty === 'hard') this.penalty = 50;
-			else this.penalty = 25;
+select: function(){
+    let loadData = sessionStorage.getItem('load');
+
+    if (loadData){ 
+        let toLoad = JSON.parse(loadData);
+        console.log("Dades carregades:", toLoad); 
+
+        this.items = toLoad.items;
+        this.states = toLoad.states;
+        this.selectedCards = toLoad.selectedCards || [];
+        this.score = toLoad.score;
+        this.groupsLeft = toLoad.groupsLeft;
+        this.groupSize = toLoad.groupSize || 2;
+        this.mode = toLoad.mode || 1;
+        this.currentLevel = toLoad.currentLevel || 1;
+
+        if (this.mode === 2) {
+            this.penalty = 10 + (this.currentLevel * 5);
+        } else {
+            let savedOptions = localStorage.options ? JSON.parse(localStorage.options) : {};
+            let difficulty = savedOptions.difficulty || 'normal';
+            if (difficulty === 'easy') this.penalty = 10;
+            else if (difficulty === 'hard') this.penalty = 50;
+            else this.penalty = 25;
+        }
+
+        sessionStorage.removeItem('load');
+
     }
-        }
-        else{ 
-            this.mode = parseInt(sessionStorage.getItem('gameMode')) || 1;
-            
-            if (this.mode === 1) {
-                let savedOptions = localStorage.options ? JSON.parse(localStorage.options) : {};
-                this.groupSize = savedOptions.groupSize || 2;
-                let numCards = savedOptions.numCards || 4; 
-                let difficulty = savedOptions.difficulty || 'normal';
+    else { 
+        this.mode = parseInt(sessionStorage.getItem('gameMode')) || 1;
+        
+        if (this.mode === 1) {
+            let savedOptions = localStorage.options ? JSON.parse(localStorage.options) : {};
+            this.groupSize = savedOptions.groupSize || 2;
+            let numCards = savedOptions.numCards || 4; 
+            let difficulty = savedOptions.difficulty || 'normal';
 
-                if (difficulty === 'easy') { this.score = 500; this.penalty = 10; }
-                else if (difficulty === 'hard') { this.score = 100; this.penalty = 50; }
-                else { this.score = 200; this.penalty = 25; }
+            if (difficulty === 'easy') { this.score = 500; this.penalty = 10; }
+            else if (difficulty === 'hard') { this.score = 100; this.penalty = 50; }
+            else { this.score = 200; this.penalty = 25; }
 
-                this.items = resources.slice(0, numCards);          
-                let gameBoard = [];
-                for (let i = 0; i < this.groupSize; i++) {
-                    gameBoard = gameBoard.concat(this.items);
-                }
-                this.items = gameBoard;
-                shuffe(this.items);
-                this.states = new Array(this.items.length).fill(StateCard.ENABLE);
-                this.groupsLeft = numCards;
-            } else {
-                this.currentLevel = parseInt(sessionStorage.getItem('currentLevel')) || 1;
-                let accumulated = sessionStorage.getItem('accumulatedScore');
-                this.score = accumulated ? parseInt(accumulated) : 300;
-                this.generateProgressiveLevel();
+            this.items = resources.slice(0, numCards);          
+            let gameBoard = [];
+            for (let i = 0; i < this.groupSize; i++) {
+                gameBoard = gameBoard.concat(this.items);
             }
+            this.items = gameBoard;
+            shuffe(this.items);
+            this.states = new Array(this.items.length).fill(StateCard.ENABLE);
+            this.groupsLeft = numCards;
+        } else {
+            // Mode progressiu: llegim el nivell que checkWin ha guardat
+            this.currentLevel = parseInt(sessionStorage.getItem('currentLevel')) || 1;
+            let accumulated = sessionStorage.getItem('accumulatedScore');
+            this.score = accumulated ? parseInt(accumulated) : 300;
+            this.generateProgressiveLevel();
         }
-        this.updateScore();
-    },
+    }
+    this.updateScore();
+},
 
     start: function(){
         this.items.forEach((_,indx)=>{
