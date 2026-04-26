@@ -9,11 +9,12 @@ const StateCard = Object.freeze({
     DONE: 2
 });
 
-function updateRanking(finalScore) {
+}
+function updateRanking(finalLevel) {
     let alies = sessionStorage.getItem('alies') || "Desconegut";
     let ranking = localStorage.getItem('ranking_mode2') ? JSON.parse(localStorage.getItem('ranking_mode2')) : [];
-    ranking.push({ name: alies, score: finalScore, date: new Date().toLocaleDateString() });
-    ranking.sort((a, b) => b.score - a.score);
+    ranking.push({ name: alies, level: finalLevel });
+    ranking.sort((a, b) => b.level - a.level);
     localStorage.setItem('ranking_mode2', JSON.stringify(ranking.slice(0, 10)));
 }
 
@@ -185,10 +186,14 @@ select: function(){
                 this.ready = this.items.length;
                 
                 if (this.score <= 0) {
-                    alert("Joc acabat!");
-                    if (this.mode === 2) updateRanking(0);
-                    window.location.assign("../");
-                }
+					alert("Joc acabat!");
+					if (this.mode === 2) {
+						updateRanking(this.currentLevel); 
+					}
+					window.location.assign("../");
+					sessionStorage.removeItem('currentLevel');
+					sessionStorage.removeItem('accumulatedScore');
+}
             }, 700);
         }
     },

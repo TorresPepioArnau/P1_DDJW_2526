@@ -14,8 +14,9 @@ function displayRanking(rankingData) {
 
     tableBody.innerHTML = "";
 
-    rankingData.sort((a, b) => b.score - a.score);
+    rankingData.sort((a, b) => b.level - a.level);
 
+    // Agafem els 10 millors 🏆
     const top10 = rankingData.slice(0, 10);
 
     top10.forEach((jugador, index) => {
@@ -23,13 +24,13 @@ function displayRanking(rankingData) {
         row.innerHTML = `
             <td>${index + 1}</td>
             <td>${jugador.name}</td>
-            <td>${jugador.score}</td>
+            <td>Nivell ${jugador.level}</td> 
         `;
         tableBody.appendChild(row);
     });
 
     if (top10.length === 0) {
-        tableBody.innerHTML = "<tr><td colspan='3'>No hi ha puntuacions encara 🚀</td></tr>";
+        tableBody.innerHTML = "<tr><td colspan='3'>No hi ha puntuacions encara</td></tr>";
     }
 }
 
