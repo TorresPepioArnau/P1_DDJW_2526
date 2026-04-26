@@ -1,51 +1,53 @@
-import {$} from "../library/jquery-4.0.0.slim.module.min.js";
-
-var options = function(){
+var options_manager = (function(){
+    
     const default_options = {
-        pairs: 2,
-        difficulty: 'normal'
+        numCards: 4,
+        groupSize: 2, 
+        difficulty: 'normal',
+        startLevelMode2: 1 
     } 
 
-    var pairs = $('#pairs');
-    var difficulty = $('#dif');
+
+    var inputNumCards = document.getElementById('numCards');
+    var inputGroupSize = document.getElementById('groupSize');
+    var inputDifficulty = document.getElementById('dif');
+    var inputStartLevel = document.getElementById('startLevel');
     
-    var savedOptions = localStorage.options && JSON.parse(localStorage.options);
-    var options = Object.create(default_options);
+    var savedOptions = localStorage.options ? JSON.parse(localStorage.options) : {};
+    var currentOptions = Object.assign({}, default_options, savedOptions);
 
-    if (savedOptions && savedOptions.pairs)
-        options.pairs = savedOptions.pairs;
-    if (savedOptions && savedOptions.difficulty)
-        options.difficulty = savedOptions.difficulty;
-
-    pairs.val(options.pairs);
-    difficulty.val(options.difficulty);
-
-    pairs.on('change', function (){
-        options.pairs = pairs.val();
-    });
-
-    difficulty.on('change', function (){
-        options.difficulty = difficulty.val();
-    });
+    if (inputNumCards) inputNumCards.value = currentOptions.numCards;
+    if (inputGroupSize) inputGroupSize.value = currentOptions.groupSize;
+    if (inputDifficulty) inputDifficulty.value = currentOptions.difficulty;
+    if (inputStartLevel) inputStartLevel.value = currentOptions.startLevelMode2;
 
     return {
         applyChanges: function(){
-            localStorage.options = JSON.stringify(options);
+            currentOptions.numCards = parseInt(inputNumCards.value);
+            currentOptions.groupSize = parseInt(inputGroupSize.value);
+            currentOptions.difficulty = inputDifficulty.value;
+            currentOptions.startLevelMode2 = parseInt(inputStartLevel.value);
+
+            localStorage.options = JSON.stringify(currentOptions);
+            
+            sessionStorage.setItem('groupSize', currentOptions.groupSize);
+            sessionStorage.setItem('numCards', currentOptions.numCards);
         },
         defaultValues: function(){
-            options.pairs = default_options.pairs;
-            options.difficulty = default_options.difficulty;
-            pairs.val(options.pairs);
-            difficulty.val(options.difficulty);
+            currentOptions = Object.assign({}, default_options);
+            if (inputNumCards) inputNumCards.value = currentOptions.numCards;
+            if (inputGroupSize) inputGroupSize.value = currentOptions.groupSize;
+            if (inputDifficulty) inputDifficulty.value = currentOptions.difficulty;
+            if (inputStartLevel) inputStartLevel.value = currentOptions.startLevelMode2;
         }
     }
-}();
+})();
 
-$('#default').on('click', function(){
-    options.defaultValues();
-})
+document.getElementById('default').addEventListener('click', function(){
+    options_manager.defaultValues();
+});
 
-$('#apply').on('click', function(){
-    options.applyChanges();
+document.getElementById('apply').addEventListener('click', function(){
+    options_manager.applyChanges();
     location.assign("../");
 });

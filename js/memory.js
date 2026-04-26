@@ -27,6 +27,10 @@ var game = {
         this.setValue && this.setValue[idx](this.items[idx]);
         this.states[idx] = StateCard.DISABLE;
     },
+	updateScore: function() {
+        const el = document.getElementById('puntuacio_display');
+        if (el) el.innerText = "Punts: " + this.score;
+    },
 select: function(){
         if (sessionStorage.load){ 
             let toLoad = JSON.parse(sessionStorage.load);
@@ -47,6 +51,7 @@ select: function(){
             if (difficulty === 'easy') this.score = 500;
             else if (difficulty === 'hard') this.score = 100;
             else this.score = 200; // normal
+			this.updateScore();
 
             this.items = resources.slice();          
             shuffe(this.items);                      
@@ -108,6 +113,7 @@ select: function(){
                 else if (savedOptions.difficulty === 'easy') penalty = 10;
                 
                 this.score -= penalty;
+				this.updateScore();
                 
                 this.selectedCards = [];
                 this.ready = this.items.length;
