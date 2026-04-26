@@ -91,6 +91,16 @@ var game = {
             this.groupSize = toLoad.groupSize || 2;
             this.mode = toLoad.mode || 1;
             this.currentLevel = toLoad.currentLevel || 1;
+			if (this.mode === 2) {
+				this.penalty = 10 + (this.currentLevel * 5);
+			} else {
+        
+			let savedOptions = localStorage.options ? JSON.parse(localStorage.options) : {};
+			let difficulty = savedOptions.difficulty || 'normal';
+			if (difficulty === 'easy') this.penalty = 10;
+			else if (difficulty === 'hard') this.penalty = 50;
+			else this.penalty = 25;
+    }
         }
         else{ 
             this.mode = parseInt(sessionStorage.getItem('gameMode')) || 1;
