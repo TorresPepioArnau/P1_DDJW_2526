@@ -4,9 +4,9 @@ const resources = ['../resources/cb.png', '../resources/co.png',
 const back = '../resources/back.png';
 
 const StateCard = Object.freeze({
-  DISABLE: 0,
-  ENABLE: 1,
-  DONE: 2
+    DISABLE: 0,
+    ENABLE: 1,
+    DONE: 2
 });
 
 function updateRanking(finalScore) {
@@ -28,7 +28,8 @@ var game = {
     groupsLeft: 0,
     mode: 1,
     currentLevel: 1,
-    
+    penalty: 25,
+
     goBack: function(idx){
         this.setValue && this.setValue[idx](back);
         this.states[idx] = StateCard.ENABLE;
@@ -41,16 +42,13 @@ var game = {
         const el = document.getElementById('puntuacio_display');
         if (el) el.innerText = "Punts: " + this.score;
     },
+
     generateProgressiveLevel: function() {
-        // augmenta el nombre de grups cada 2 nivells
         let numCards = 2 + Math.floor(this.currentLevel / 2);
         if (numCards > resources.length) numCards = resources.length;
 
-        // cada 4 nivells augmenta el tamany de grup
         this.groupSize = 2 + Math.floor(this.currentLevel / 4);
-        
-        let accumulated = sessionStorage.getItem('accumulatedScore');
-        this.score = accumulated ? parseInt(accumulated) : 300;
+        this.penalty = 10 + (this.currentLevel * 5);
 
         this.items = resources.slice(0, numCards);
         let gameBoard = [];
@@ -63,20 +61,25 @@ var game = {
         this.states = new Array(this.items.length).fill(StateCard.ENABLE);
         this.groupsLeft = numCards;
     },
-    checkWin: function() {
+
+	checkWin: function() {
         if (this.groupsLeft <= 0) {
             if (this.mode === 1) {
                 alert(`Has guanyat amb ${this.score} punts!!!!`);
                 window.location.assign("../");
             } else {
                 alert(`Nivell ${this.currentLevel} superat!`);
-                this.currentLevel++;
-                sessionStorage.setItem('currentLevel', this.currentLevel);
+                
+                let proxiNivell = parseInt(this.currentLevel) + 1;
+                
+                sessionStorage.setItem('currentLevel', proxiNivell);
                 sessionStorage.setItem('accumulatedScore', this.score); 
-                location.reload();
+                
+                location.reload(); 
             }
         }
     },
+
     select: function(){
         if (sessionStorage.load){ 
             let toLoad = JSON.parse(sessionStorage.load);
@@ -86,8 +89,10 @@ var game = {
             this.score = toLoad.score;
             this.groupsLeft = toLoad.groupsLeft;
             this.groupSize = toLoad.groupSize || 2;
+            this.mode = toLoad.mode || 1;
+            this.currentLevel = toLoad.currentLevel || 1;
         }
-        else { 
+        else{ 
             this.mode = parseInt(sessionStorage.getItem('gameMode')) || 1;
             
             if (this.mode === 1) {
@@ -96,9 +101,9 @@ var game = {
                 let numCards = savedOptions.numCards || 4; 
                 let difficulty = savedOptions.difficulty || 'normal';
 
-                if (difficulty === 'easy') this.score = 500;
-                else if (difficulty === 'hard') this.score = 100;
-                else this.score = 200;
+                if (difficulty === 'easy') { this.score = 500; this.penalty = 10; }
+                else if (difficulty === 'hard') { this.score = 100; this.penalty = 50; }
+                else { this.score = 200; this.penalty = 25; }
 
                 this.items = resources.slice(0, numCards);          
                 let gameBoard = [];
@@ -111,19 +116,22 @@ var game = {
                 this.groupsLeft = numCards;
             } else {
                 this.currentLevel = parseInt(sessionStorage.getItem('currentLevel')) || 1;
+                let accumulated = sessionStorage.getItem('accumulatedScore');
+                this.score = accumulated ? parseInt(accumulated) : 300;
                 this.generateProgressiveLevel();
             }
         }
         this.updateScore();
     },
+
     start: function(){
         this.items.forEach((_,indx)=>{
             if (this.states[indx] === StateCard.DISABLE || this.states[indx] === StateCard.DONE){
                 this.ready++;
             }
             else{
-                // Temps d'inici més curt segons el nivell
-                let wait = Math.max(200, 1000 - (this.currentLevel * 100));
+                // Temps escalable segons nivell
+                let wait = Math.max(200, 1000 - (this.currentLevel * 150));
                 setTimeout(()=>{
                     this.ready++;
                     this.goBack(indx);
@@ -131,6 +139,7 @@ var game = {
             }
         });
     },
+
     click: function(indx){
         if (this.states[indx] !== StateCard.ENABLE || this.ready < this.items.length) return;
         
@@ -145,23 +154,13 @@ var game = {
             this.selectedCards.forEach(idx => this.states[idx] = StateCard.DONE);
             this.groupsLeft--;
             this.selectedCards = [];
-            this.checkWin(); 
+            this.checkWin();
         }
         else { 
             this.ready = 0;
             setTimeout(() => {
                 this.selectedCards.forEach(idx => this.goBack(idx));
-                
-                let savedOptions = localStorage.options ? JSON.parse(localStorage.options) : {};
-                let penalty = 25;
-                // penalització augmenta en 5 per cada nivell
-                if (this.mode === 2) penalty = 10 + (this.currentLevel * 5);
-                else {
-                    if (savedOptions.difficulty === 'hard') penalty = 50;
-                    else if (savedOptions.difficulty === 'easy') penalty = 10;
-                }
-                
-                this.score -= penalty;
+                this.score -= this.penalty;
                 this.updateScore();
                 
                 this.selectedCards = [];
@@ -175,6 +174,7 @@ var game = {
             }, 700);
         }
     },
+
     save: function(){
         let to_save = JSON.stringify({
             items: this.items,
