@@ -9,21 +9,22 @@ addEventListener('load', function() {
         }
     });
 
+	document.getElementById('scores').addEventListener('click', function(){
+        window.location.assign("./html/ranking.html");
+    });
+
     document.getElementById('options').addEventListener('click', function(){
         window.location.assign("./html/options.html");
     });
 
-    document.getElementById('saves').addEventListener('click', function(){
-        let to_load = localStorage.getItem('save');
-        
-        if (!to_load) {
-            alert("No hi ha cap partida a carregar");
-            return;
-        }
-        
-        sessionStorage.setItem('load', to_load);
-        window.location.assign("./html/game.html");
-    });
+	document.getElementById('saves').addEventListener('click', function(){
+		if (localStorage.getItem('save')) {
+			sessionStorage.setItem('load', localStorage.getItem('save'));
+			window.location.assign("./html/game.html");
+		} else {
+			alert("No hi ha cap partida guardada!");
+		}
+	});
 
     let clicar_sortir = document.getElementById('exit');
     if (clicar_sortir) {
