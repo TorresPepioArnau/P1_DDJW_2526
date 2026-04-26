@@ -27,7 +27,7 @@ var game = {
         this.setValue && this.setValue[idx](this.items[idx]);
         this.states[idx] = StateCard.DISABLE;
     },
-    select: function(){
+select: function(){
         if (sessionStorage.load){ 
             let toLoad = JSON.parse(sessionStorage.load);
             this.items = toLoad.items;
@@ -38,13 +38,18 @@ var game = {
             this.groupSize = toLoad.groupSize || 2;
         }
         else{ 
+            let savedOptions = localStorage.options ? JSON.parse(localStorage.options) : {};
+            
+            this.groupSize = savedOptions.groupSize || 2;
+            let numCards = savedOptions.numCards || 4; 
+            let difficulty = savedOptions.difficulty || 'normal';
 
-            this.groupSize = parseInt(sessionStorage.getItem('groupSize')) || 2;
-            let numCards = parseInt(sessionStorage.getItem('numCards')) || 4; 
+            if (difficulty === 'easy') this.score = 500;
+            else if (difficulty === 'hard') this.score = 100;
+            else this.score = 200; // normal
 
             this.items = resources.slice();          
             shuffe(this.items);                      
-            
             this.items = this.items.slice(0, numCards); 
             
             let gameBoard = [];
@@ -92,15 +97,23 @@ var game = {
                 window.location.assign("../");
             }
         }
-        else {
+		else { 
             this.ready = 0;
             setTimeout(() => {
                 this.selectedCards.forEach(idx => this.goBack(idx));
-                this.score -= 25;
+                
+                let savedOptions = localStorage.options ? JSON.parse(localStorage.options) : {};
+                let penalty = 25;
+                if (savedOptions.difficulty === 'hard') penalty = 50;
+                else if (savedOptions.difficulty === 'easy') penalty = 10;
+                
+                this.score -= penalty;
+                
                 this.selectedCards = [];
                 this.ready = this.items.length;
-                if (this.score <= 0){
-                    alert ("Has perdut");
+                
+                if (this.score <= 0) {
+                    alert("Has perdut!");
                     window.location.assign("../");
                 }
             }, 700);
