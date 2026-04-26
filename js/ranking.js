@@ -16,7 +16,6 @@ function displayRanking(rankingData) {
 
     rankingData.sort((a, b) => b.level - a.level);
 
-    // Agafem els 10 millors 🏆
     const top10 = rankingData.slice(0, 10);
 
     top10.forEach((jugador, index) => {

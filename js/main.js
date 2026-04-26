@@ -18,18 +18,12 @@ addEventListener('load', function() {
     });
 
 	document.getElementById('saves').addEventListener('click', function(){
-		if (localStorage.getItem('save')) {
-			sessionStorage.setItem('load', localStorage.getItem('save'));
-			window.location.assign("./html/game.html");
-		} else {
-			alert("No hi ha cap partida guardada!");
-		}
+		window.location.assign("./html/saves.html");
 	});
 
-    let clicar_sortir = document.getElementById('exit');
-    if (clicar_sortir) {
-        clicar_sortir.addEventListener('click', function(){
-            console.warn("No es pot sortir!");
-        });
-    }
+
+	document.getElementById('exit').addEventListener('click', function(){
+		alert("Gràcies per jugar, ja pots tancar la finestra");
+	});
+
 });

@@ -1,7 +1,7 @@
 const resources = ['../resources/cb.png', '../resources/co.png',
                 '../resources/sb.png', '../resources/so.png',
                 '../resources/tb.png', '../resources/to.png'];
-const back = '../resources/back.png';
+const back = '../resources/back.svg';
 
 const StateCard = Object.freeze({
     DISABLE: 0,
@@ -9,7 +9,6 @@ const StateCard = Object.freeze({
     DONE: 2
 });
 
-}
 function updateRanking(finalLevel) {
     let alies = sessionStorage.getItem('alies') || "Desconegut";
     let ranking = localStorage.getItem('ranking_mode2') ? JSON.parse(localStorage.getItem('ranking_mode2')) : [];
@@ -133,7 +132,6 @@ select: function(){
             this.states = new Array(this.items.length).fill(StateCard.ENABLE);
             this.groupsLeft = numCards;
         } else {
-            // Mode progressiu: llegim el nivell que checkWin ha guardat
             this.currentLevel = parseInt(sessionStorage.getItem('currentLevel')) || 1;
             let accumulated = sessionStorage.getItem('accumulatedScore');
             this.score = accumulated ? parseInt(accumulated) : 300;
@@ -149,7 +147,6 @@ select: function(){
                 this.ready++;
             }
             else{
-                // Temps escalable segons nivell
                 let wait = Math.max(200, 1000 - (this.currentLevel * 150));
                 setTimeout(()=>{
                     this.ready++;
@@ -159,7 +156,7 @@ select: function(){
         });
     },
 
-    click: function(indx){
+click: function(indx){
         if (this.states[indx] !== StateCard.ENABLE || this.ready < this.items.length) return;
         
         this.goFront(indx);
@@ -186,32 +183,54 @@ select: function(){
                 this.ready = this.items.length;
                 
                 if (this.score <= 0) {
-					alert("Joc acabat!");
-					if (this.mode === 2) {
-						updateRanking(this.currentLevel); 
-					}
-					window.location.assign("../");
-					sessionStorage.removeItem('currentLevel');
-					sessionStorage.removeItem('accumulatedScore');
-}
+                    alert("Joc acabat!");
+                    if (this.mode === 2) {
+                        updateRanking(this.currentLevel); 
+                    }
+                    sessionStorage.removeItem('currentLevel');
+                    sessionStorage.removeItem('accumulatedScore');
+                    window.location.assign("../");
+                }
             }, 700);
         }
     },
 
-    save: function(){
-        let to_save = JSON.stringify({
-            items: this.items,
-            states: this.states,
-            selectedCards: this.selectedCards,
-            score: this.score,
-            groupsLeft: this.groupsLeft,
-            groupSize: this.groupSize,
-            mode: this.mode,
-            currentLevel: this.currentLevel
-        });
-        localStorage.setItem('save', to_save);
-        window.location.assign("../");
+	save: function() {
+		let alies = sessionStorage.getItem('alies') || "Anònim";
+		let savesList = localStorage.getItem('saves_list') ? JSON.parse(localStorage.getItem('saves_list')) : [];
+    
+		let currentId = sessionStorage.getItem('currentSaveId');
+
+		let currentSaveData = {
+			items: this.items,
+			states: this.states,
+			selectedCards: this.selectedCards,
+			score: this.score,
+			groupsLeft: this.groupsLeft,
+			groupSize: this.groupSize,
+			mode: this.mode,
+			currentLevel: this.currentLevel
+		};
+
+		if (currentId) {
+			let index = savesList.findIndex(s => s.id == currentId);
+			if (index !== -1) {
+				savesList[index].dades = currentSaveData;
+				savesList[index].etiqueta = `${alies} - Nivell ${this.currentLevel} (Editat)`;
+			}
+		} else {
+			savesList.push({
+				id: Date.now(),
+				etiqueta: `${alies} - Nivell ${this.currentLevel}`,
+				dades: currentSaveData
+			});
     }
+
+    localStorage.setItem('saves_list', JSON.stringify(savesList));
+   
+    sessionStorage.removeItem('currentSaveId');
+    window.location.assign("../");
+}
 };
 
 function shuffe(arr){
