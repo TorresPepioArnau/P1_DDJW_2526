@@ -9,6 +9,14 @@ const StateCard = Object.freeze({
   DONE: 2
 });
 
+function updateRanking(finalScore) {
+    let alies = sessionStorage.getItem('alies') || "Desconegut";
+    let ranking = localStorage.getItem('ranking_mode2') ? JSON.parse(localStorage.getItem('ranking_mode2')) : [];
+    ranking.push({ name: alies, score: finalScore, date: new Date().toLocaleDateString() });
+    ranking.sort((a, b) => b.score - a.score);
+    localStorage.setItem('ranking_mode2', JSON.stringify(ranking.slice(0, 10)));
+}
+
 var game = {
     items: [],
     states: [],
@@ -18,6 +26,8 @@ var game = {
     score: 200,
     groupSize: 2,
     groupsLeft: 0,
+    mode: 1,
+    currentLevel: 1,
     
     goBack: function(idx){
         this.setValue && this.setValue[idx](back);
@@ -27,11 +37,47 @@ var game = {
         this.setValue && this.setValue[idx](this.items[idx]);
         this.states[idx] = StateCard.DISABLE;
     },
-	updateScore: function() {
+    updateScore: function() {
         const el = document.getElementById('puntuacio_display');
         if (el) el.innerText = "Punts: " + this.score;
     },
-select: function(){
+    generateProgressiveLevel: function() {
+        // augmenta el nombre de grups cada 2 nivells
+        let numCards = 2 + Math.floor(this.currentLevel / 2);
+        if (numCards > resources.length) numCards = resources.length;
+
+        // cada 4 nivells augmenta el tamany de grup
+        this.groupSize = 2 + Math.floor(this.currentLevel / 4);
+        
+        let accumulated = sessionStorage.getItem('accumulatedScore');
+        this.score = accumulated ? parseInt(accumulated) : 300;
+
+        this.items = resources.slice(0, numCards);
+        let gameBoard = [];
+        for (let i = 0; i < this.groupSize; i++) {
+            gameBoard = gameBoard.concat(this.items);
+        }
+        this.items = gameBoard;
+        shuffe(this.items);
+        
+        this.states = new Array(this.items.length).fill(StateCard.ENABLE);
+        this.groupsLeft = numCards;
+    },
+    checkWin: function() {
+        if (this.groupsLeft <= 0) {
+            if (this.mode === 1) {
+                alert(`Has guanyat amb ${this.score} punts!!!!`);
+                window.location.assign("../");
+            } else {
+                alert(`Nivell ${this.currentLevel} superat!`);
+                this.currentLevel++;
+                sessionStorage.setItem('currentLevel', this.currentLevel);
+                sessionStorage.setItem('accumulatedScore', this.score); 
+                location.reload();
+            }
+        }
+    },
+    select: function(){
         if (sessionStorage.load){ 
             let toLoad = JSON.parse(sessionStorage.load);
             this.items = toLoad.items;
@@ -41,32 +87,34 @@ select: function(){
             this.groupsLeft = toLoad.groupsLeft;
             this.groupSize = toLoad.groupSize || 2;
         }
-        else{ 
-            let savedOptions = localStorage.options ? JSON.parse(localStorage.options) : {};
+        else { 
+            this.mode = parseInt(sessionStorage.getItem('gameMode')) || 1;
             
-            this.groupSize = savedOptions.groupSize || 2;
-            let numCards = savedOptions.numCards || 4; 
-            let difficulty = savedOptions.difficulty || 'normal';
+            if (this.mode === 1) {
+                let savedOptions = localStorage.options ? JSON.parse(localStorage.options) : {};
+                this.groupSize = savedOptions.groupSize || 2;
+                let numCards = savedOptions.numCards || 4; 
+                let difficulty = savedOptions.difficulty || 'normal';
 
-            if (difficulty === 'easy') this.score = 500;
-            else if (difficulty === 'hard') this.score = 100;
-            else this.score = 200; // normal
-			this.updateScore();
+                if (difficulty === 'easy') this.score = 500;
+                else if (difficulty === 'hard') this.score = 100;
+                else this.score = 200;
 
-            this.items = resources.slice();          
-            shuffe(this.items);                      
-            this.items = this.items.slice(0, numCards); 
-            
-            let gameBoard = [];
-            for (let i = 0; i < this.groupSize; i++) {
-                gameBoard = gameBoard.concat(this.items);
+                this.items = resources.slice(0, numCards);          
+                let gameBoard = [];
+                for (let i = 0; i < this.groupSize; i++) {
+                    gameBoard = gameBoard.concat(this.items);
+                }
+                this.items = gameBoard;
+                shuffe(this.items);
+                this.states = new Array(this.items.length).fill(StateCard.ENABLE);
+                this.groupsLeft = numCards;
+            } else {
+                this.currentLevel = parseInt(sessionStorage.getItem('currentLevel')) || 1;
+                this.generateProgressiveLevel();
             }
-            this.items = gameBoard;
-            
-            shuffe(this.items);
-            this.states = new Array(this.items.length).fill(StateCard.ENABLE);
-            this.groupsLeft = numCards;
         }
+        this.updateScore();
     },
     start: function(){
         this.items.forEach((_,indx)=>{
@@ -74,10 +122,12 @@ select: function(){
                 this.ready++;
             }
             else{
+                // Temps d'inici més curt segons el nivell
+                let wait = Math.max(200, 1000 - (this.currentLevel * 100));
                 setTimeout(()=>{
                     this.ready++;
                     this.goBack(indx);
-                }, 1000 + 100 * indx);
+                }, wait + 100 * indx);
             }
         });
     },
@@ -89,37 +139,37 @@ select: function(){
 
         if (this.selectedCards.length < this.groupSize) return;
 
-
         let allMatch = this.selectedCards.every(val => this.items[val] === this.items[this.selectedCards[0]]);
 
         if (allMatch) {
             this.selectedCards.forEach(idx => this.states[idx] = StateCard.DONE);
             this.groupsLeft--;
             this.selectedCards = [];
-            
-            if (this.groupsLeft <= 0){
-                alert(`Has guanyat amb ${this.score} punts!!!!`);
-                window.location.assign("../");
-            }
+            this.checkWin(); 
         }
-		else { 
+        else { 
             this.ready = 0;
             setTimeout(() => {
                 this.selectedCards.forEach(idx => this.goBack(idx));
                 
                 let savedOptions = localStorage.options ? JSON.parse(localStorage.options) : {};
                 let penalty = 25;
-                if (savedOptions.difficulty === 'hard') penalty = 50;
-                else if (savedOptions.difficulty === 'easy') penalty = 10;
+                // penalització augmenta en 5 per cada nivell
+                if (this.mode === 2) penalty = 10 + (this.currentLevel * 5);
+                else {
+                    if (savedOptions.difficulty === 'hard') penalty = 50;
+                    else if (savedOptions.difficulty === 'easy') penalty = 10;
+                }
                 
                 this.score -= penalty;
-				this.updateScore();
+                this.updateScore();
                 
                 this.selectedCards = [];
                 this.ready = this.items.length;
                 
                 if (this.score <= 0) {
-                    alert("Has perdut!");
+                    alert("Joc acabat!");
+                    if (this.mode === 2) updateRanking(0);
                     window.location.assign("../");
                 }
             }, 700);
@@ -132,12 +182,14 @@ select: function(){
             selectedCards: this.selectedCards,
             score: this.score,
             groupsLeft: this.groupsLeft,
-            groupSize: this.groupSize
+            groupSize: this.groupSize,
+            mode: this.mode,
+            currentLevel: this.currentLevel
         });
         localStorage.setItem('save', to_save);
         window.location.assign("../");
     }
-}
+};
 
 function shuffe(arr){
     arr.sort(function () {return Math.random() - 0.5});
